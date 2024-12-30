@@ -1,0 +1,7 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-disk
+provisioner: kubernetes.io/no-provisioner # 表示这个 StorageClass 不支持自动制备
+volumeBindingMode: WaitForFirstConsumer
+# allowVolumeExpansion: true

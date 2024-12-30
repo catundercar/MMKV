@@ -1,0 +1,37 @@
+FROM gcc:11.5.0 AS builder
+
+COPY sources.list /etc/apt/sources.list
+RUN apt update
+RUN apt install cmake vim -y
+
+# 安装 golang 环境
+RUN wget https://golang.google.cn/dl/go1.23.3.linux-amd64.tar.gz && tar -zxvf go1.23.3.linux-amd64.tar.gz && rm -rf go1.23.3.linux-amd64.tar.gz && mv go /usr/local/ && mkdir -p /go/bin
+
+# 设置环境变量
+ENV GOROOT=/usr/local/go
+ENV GOPATH=/go
+ENV GOBIN=/go/bin
+ENV GO111MODULE=auto
+ENV GOPROXY="https://goproxy.cn"
+ENV PATH=$GOROOT/bin:$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+WORKDIR /app
+
+COPY . .
+
+# 设置环境变量
+ENV CGO_ENABLED='1'
+ENV CGO_CFLAGS='-static -O2 -g'
+ENV CGO_LDFLAGS='-static -O2 -g'
+
+WORKDIR /app/POSIX/golang
+RUN mkdir -p build && cd build && rm -rf ./* && cmake .. -DCMAKE_INSTALL_PREFIX=.. && make -j8 install
+
+WORKDIR /app/POSIX/golang/test
+RUN go build -v -o mmkv-test
+
+FROM debian:bullseye-slim
+WORKDIR /app
+COPY --from=builder /app/POSIX/golang/test/mmkv-test /app/mmkv-test
+CMD ["./mmkv-test"]
+

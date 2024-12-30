@@ -20,6 +20,8 @@
 
 cmake_minimum_required(VERSION 3.10.0)
 
+set(CMAKE_BUILD_TYPE Release)
+
 project(MMKV)
 
 add_subdirectory(src)

@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: mmkv-read
+  namespace: default
+  labels:
+    app: mmkv-read
+spec:
+  selector:
+    matchLabels:
+      name: mmkv-read
+  template:
+    metadata:
+      labels:
+        name: mmkv-read
+    spec:
+      containers:
+        - name: mmkv-read
+          image: localhost:5001/mmkv-go:latest
+          args: ["./mmkv-test", "-m", "read", "-d", "/tmp/mmkv"]
+          resources:
+            limits:
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 200Mi
+          volumeMounts:
+            - name: tmpmmkv
+              mountPath: /tmp/mmkv
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: tmpmmkv
+          hostPath:
+            path: /tmp/mmkv-k8s
+            persistentVolumeClaim:
+              claimName: mmkv-pvc

@@ -1,9 +1,7 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-
 	//"log"
 	"math"
 	"os"
@@ -12,13 +10,9 @@ import (
 	"tencent.com/mmkv"
 )
 
-var mode = flag.String("m", "set", "set mode")
-var d = flag.String("d", "/tmp/mmkv", "mmkv root directory")
-
 func main() {
-	flag.Parse()
 	// init MMKV with root dir and log redirecting
-	mmkv.InitializeMMKVWithLogLevelAndHandler(*d, mmkv.MMKVLogInfo, logHandler)
+	mmkv.InitializeMMKVWithLogLevelAndHandler("/tmp/mmkv", mmkv.MMKVLogInfo, logHandler)
 
 	// you can set log redirecting
 	// mmkv.RegisterLogHandler(logHandler)
@@ -28,31 +22,17 @@ func main() {
 	// you can get notify content change by other process (not in realtime)
 	mmkv.RegisterContentChangeHandler(contentChangeNotify)
 
-	if *mode == "set" {
-		setLoop()
-	}
-	if *mode == "read" {
-		readLoop()
-	}
-}
+	//testExpectedCapacity()
+	functionalTest()
+	testReKey()
 
-func setLoop() {
-	kv := mmkv.DefaultMMKV()
-	var i int32 = 0
-	for {
-		fmt.Println("set hello", i)
-		fmt.Println(kv.SetInt32(i, "hello"))
-		time.Sleep(1 * time.Second)
-		i++
-	}
-}
-
-func readLoop() {
-	kv := mmkv.DefaultMMKV()
-	for {
-		fmt.Println("read: ", kv.GetInt32("hello"))
-		time.Sleep(1 * time.Second)
-	}
+	testMMKV("test/Encrypt", "cryptKey", false)
+	testBackup()
+	testRestore()
+	testAutoExpire()
+	testCompareBeforeSet()
+	testRemoveStorage()
+	testReadOnly()
 }
 
 func functionalTest() {
@@ -205,32 +185,32 @@ func testBackup() {
 	fmt.Println("backup all count: ", count)
 }
 
-func testExpectedCapacity() {
-	key := "key0"
-	value := "🏊🏻®4️⃣🐅_"
-	dataLen := 10000
-	for i := 0; i < dataLen; i++ {
-		value = value + string('0')
-	}
-	fmt.Println("value size = ", len(value))
-	expectedSize := uint64(len(key) + len(value))
-	// if we know exactly the sizes of key and value, set expectedCapacity for performance improvement
-	kv := mmkv.MMKVWithIDAndExpectedCapacity("expectedCapacityTest0", expectedSize)
-	// 0 times expand
-	kv.SetString(value, key)
-	//     fmt.Println("string =", bytes.Count([]byte(kv.GetString("key0")), nil))
-
-	count := 10
-	expectedSize1 := expectedSize * uint64(count)
-	fmt.Println("expectedSize1 =", expectedSize1)
-	kv1 := mmkv.MMKVWithIDAndExpectedCapacity("expectedCapacityTest1", expectedSize1)
-	for i := 0; i < count; i++ {
-		key := "key" + string(i)
-		// 0 times expand
-		kv1.SetString(value, key)
-	}
-
-}
+//func testExpectedCapacity() {
+//    key := "key0"
+//    value := "🏊🏻®4️⃣🐅_"
+//    dataLen := 10000
+//    for i := 0; i < dataLen; i++ {
+//        value = value + string('0')
+//    }
+//    fmt.Println("value size = ", len(value))
+//    expectedSize := uint64(len(key) + len(value))
+//    // if we know exactly the sizes of key and value, set expectedCapacity for performance improvement
+//    kv := mmkv.MMKVWithIDAndExpectedCapacity("expectedCapacityTest0", expectedSize)
+//    // 0 times expand
+//    kv.SetString(value, key)
+////     fmt.Println("string =", bytes.Count([]byte(kv.GetString("key0")), nil))
+//
+//    count := 10
+//    expectedSize1 := expectedSize * uint64(count)
+//    fmt.Println("expectedSize1 =", expectedSize1)
+//    kv1 := mmkv.MMKVWithIDAndExpectedCapacity("expectedCapacityTest1", expectedSize1)
+//    for i := 0; i < count; i++ {
+//        key := "key" + string(i)
+//        // 0 times expand
+//        kv1.SetString(value, key)
+//    }
+//
+//}
 
 func testRestore() {
 	rootDir := "/tmp/mmkv_backup"
